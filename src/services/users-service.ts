@@ -17,6 +17,13 @@ export class InvalidCredentialsError extends Error {
   }
 }
 
+export class UnauthorizedError extends Error {
+  constructor() {
+    super("Unauthorizeed");
+    this.name = "UnauthorizedError";
+  }
+}
+
 interface RegisterUserPayload {
   name: string;
   email: string;
@@ -86,5 +93,55 @@ export async function loginUser(payload: LoginUserPayload): Promise<string> {
   });
 
   return token;
+}
+
+interface UserResponse {
+  id: number;
+  name: string;
+  email: string;
+  created_at: Date | null;
+}
+
+export async function getCurrentUser(token: string): Promise<UserResponse> {
+  const sessionResult = await db
+    .select({
+      userId: sessions.userId,
+    })
+    .from(sessions)
+    .where(eq(sessions.token, token))
+    .limit(1);
+
+  if (sessionResult.length === 0) {
+    throw new UnauthorizedError();
+  }
+
+  const session = sessionResult[0];
+  if (session.userId === null) {
+    throw new UnauthorizedError();
+  }
+
+  const userResult = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      createAt: users.createAt,
+    })
+    .from(users)
+    .where(eq(users.id, session.userId))
+    .limit(1);
+
+  if (userResult.length === 0) {
+    throw new UnauthorizedError();
+  }
+
+  const user = userResult[0];
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    created_at: user.createAt,
+  };
 }
 
