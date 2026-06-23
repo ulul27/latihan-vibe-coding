@@ -146,19 +146,11 @@ export async function getCurrentUser(token: string): Promise<UserResponse> {
 }
 
 export async function logoutUser(token: string): Promise<void> {
-  const sessionResult = await db
-    .select({
-      id: sessions.id,
-    })
-    .from(sessions)
-    .where(eq(sessions.token, token))
-    .limit(1);
+  const [result] = await db.delete(sessions).where(eq(sessions.token, token));
 
-  if (sessionResult.length === 0) {
+  if (result.affectedRows === 0) {
     throw new UnauthorizedError();
   }
-
-  await db.delete(sessions).where(eq(sessions.token, token));
 }
 
 

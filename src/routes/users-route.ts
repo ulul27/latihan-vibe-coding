@@ -1,6 +1,13 @@
 import { Elysia, t } from "elysia";
 import { registerUser, EmailAlreadyExistsError, loginUser, InvalidCredentialsError, getCurrentUser, UnauthorizedError, logoutUser } from "../services/users-service";
 
+function extractToken(authHeader: string | undefined): string | null {
+  if (!authHeader) return null;
+  if (authHeader.startsWith("Bearer ")) return authHeader.substring(7);
+  if (authHeader.startsWith("Bearer. ")) return authHeader.substring(8);
+  return null;
+}
+
 export const usersRoute = new Elysia()
   .post("/api/users", async ({ body, set }) => {
     try {
@@ -41,22 +48,7 @@ export const usersRoute = new Elysia()
   })
   .get("/api/users/current", async ({ headers, set }) => {
     try {
-      const authHeader = headers["authorization"];
-      if (!authHeader) {
-        set.status = 401;
-        return { error: "Unauthorizeed" };
-      }
-
-      let token = "";
-      if (authHeader.startsWith("Bearer ")) {
-        token = authHeader.substring(7);
-      } else if (authHeader.startsWith("Bearer. ")) {
-        token = authHeader.substring(8);
-      } else {
-        set.status = 401;
-        return { error: "Unauthorizeed" };
-      }
-
+      const token = extractToken(headers["authorization"]);
       if (!token) {
         set.status = 401;
         return { error: "Unauthorizeed" };
@@ -75,22 +67,7 @@ export const usersRoute = new Elysia()
   })
   .delete("/api/users/logout", async ({ headers, set }) => {
     try {
-      const authHeader = headers["authorization"];
-      if (!authHeader) {
-        set.status = 401;
-        return { error: "Unauthorizeed" };
-      }
-
-      let token = "";
-      if (authHeader.startsWith("Bearer ")) {
-        token = authHeader.substring(7);
-      } else if (authHeader.startsWith("Bearer. ")) {
-        token = authHeader.substring(8);
-      } else {
-        set.status = 401;
-        return { error: "Unauthorizeed" };
-      }
-
+      const token = extractToken(headers["authorization"]);
       if (!token) {
         set.status = 401;
         return { error: "Unauthorizeed" };
