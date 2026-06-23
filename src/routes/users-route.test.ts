@@ -102,5 +102,54 @@ describe("Users Route Integration Tests", () => {
     expect(missingResponse.status).toBe(401);
     const missingBody = await missingResponse.json();
     expect(missingBody).toEqual({ error: "Unauthorizeed" });
+
+    // 7. Logout User - Success
+    const logoutResponse = await app.handle(
+      new Request("http://localhost/api/users/logout", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    );
+    expect(logoutResponse.status).toBe(200);
+    const logoutBody = await logoutResponse.json();
+    expect(logoutBody).toEqual({ data: "OK" });
+
+    // 8. Get Current User - Failure (Session already deleted)
+    const getAfterLogoutResponse = await app.handle(
+      new Request("http://localhost/api/users/current", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    );
+    expect(getAfterLogoutResponse.status).toBe(401);
+    const getAfterLogoutBody = await getAfterLogoutResponse.json();
+    expect(getAfterLogoutBody).toEqual({ error: "Unauthorizeed" });
+
+    // 9. Logout again - Failure (Unauthorized)
+    const logoutAgainResponse = await app.handle(
+      new Request("http://localhost/api/users/logout", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+    );
+    expect(logoutAgainResponse.status).toBe(401);
+    const logoutAgainBody = await logoutAgainResponse.json();
+    expect(logoutAgainBody).toEqual({ error: "Unauthorizeed" });
+
+    // 10. Logout without header - Failure (Unauthorized)
+    const logoutNoHeaderResponse = await app.handle(
+      new Request("http://localhost/api/users/logout", {
+        method: "DELETE",
+      })
+    );
+    expect(logoutNoHeaderResponse.status).toBe(401);
+    const logoutNoHeaderBody = await logoutNoHeaderResponse.json();
+    expect(logoutNoHeaderBody).toEqual({ error: "Unauthorizeed" });
   });
 });

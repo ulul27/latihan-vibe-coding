@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { registerUser, EmailAlreadyExistsError, loginUser, InvalidCredentialsError, getCurrentUser, UnauthorizedError } from "../services/users-service";
+import { registerUser, EmailAlreadyExistsError, loginUser, InvalidCredentialsError, getCurrentUser, UnauthorizedError, logoutUser } from "../services/users-service";
 
 export const usersRoute = new Elysia()
   .post("/api/users", async ({ body, set }) => {
@@ -64,6 +64,40 @@ export const usersRoute = new Elysia()
 
       const user = await getCurrentUser(token);
       return { data: user };
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        set.status = 401;
+        return { error: error.message };
+      }
+      set.status = 500;
+      return { error: "Internal Server Error" };
+    }
+  })
+  .delete("/api/users/logout", async ({ headers, set }) => {
+    try {
+      const authHeader = headers["authorization"];
+      if (!authHeader) {
+        set.status = 401;
+        return { error: "Unauthorizeed" };
+      }
+
+      let token = "";
+      if (authHeader.startsWith("Bearer ")) {
+        token = authHeader.substring(7);
+      } else if (authHeader.startsWith("Bearer. ")) {
+        token = authHeader.substring(8);
+      } else {
+        set.status = 401;
+        return { error: "Unauthorizeed" };
+      }
+
+      if (!token) {
+        set.status = 401;
+        return { error: "Unauthorizeed" };
+      }
+
+      await logoutUser(token);
+      return { data: "OK" };
     } catch (error) {
       if (error instanceof UnauthorizedError) {
         set.status = 401;
