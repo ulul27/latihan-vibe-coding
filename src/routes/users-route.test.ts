@@ -152,4 +152,80 @@ describe("Users Route Integration Tests", () => {
     const logoutNoHeaderBody = await logoutNoHeaderResponse.json();
     expect(logoutNoHeaderBody).toEqual({ error: "Unauthorizeed" });
   });
+
+  it("should fail validation when name, email, or password exceeds 255 characters on register", async () => {
+    const longString = "a".repeat(256);
+    
+    // Test long name
+    const resName = await app.handle(
+      new Request("http://localhost/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: longString,
+          email: "valid@email.com",
+          password: "password123",
+        }),
+      })
+    );
+    expect(resName.status).toBe(400);
+
+    // Test long email
+    const resEmail = await app.handle(
+      new Request("http://localhost/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "valid name",
+          email: longString,
+          password: "password123",
+        }),
+      })
+    );
+    expect(resEmail.status).toBe(400);
+
+    // Test long password
+    const resPassword = await app.handle(
+      new Request("http://localhost/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "valid name",
+          email: "valid@email.com",
+          password: longString,
+        }),
+      })
+    );
+    expect(resPassword.status).toBe(400);
+  });
+
+  it("should fail validation when email or password exceeds 255 characters on login", async () => {
+    const longString = "a".repeat(256);
+
+    // Test long email
+    const resEmail = await app.handle(
+      new Request("http://localhost/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: longString,
+          password: "password123",
+        }),
+      })
+    );
+    expect(resEmail.status).toBe(400);
+
+    // Test long password
+    const resPassword = await app.handle(
+      new Request("http://localhost/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "valid@email.com",
+          password: longString,
+        }),
+      })
+    );
+    expect(resPassword.status).toBe(400);
+  });
 });
