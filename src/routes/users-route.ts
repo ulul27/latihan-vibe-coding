@@ -23,9 +23,9 @@ export const usersRoute = new Elysia()
     }
   }, {
     body: t.Object({
-      name: t.String(),
-      email: t.String(),
-      password: t.String()
+      name: t.String({ maxLength: 255 }),
+      email: t.String({ maxLength: 255 }),
+      password: t.String({ maxLength: 255 })
     })
   })
   .post("/api/users/login", async ({ body, set }) => {
@@ -42,8 +42,8 @@ export const usersRoute = new Elysia()
     }
   }, {
     body: t.Object({
-      email: t.String(),
-      password: t.String()
+      email: t.String({ maxLength: 255 }),
+      password: t.String({ maxLength: 255 })
     })
   })
   .get("/api/users/current", async ({ headers, set }) => {
