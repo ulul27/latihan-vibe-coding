@@ -3,7 +3,7 @@ import { db } from "./db";
 import { users } from "./db/schema";
 import { usersRoute } from "./routes/users-route";
 
-const app = new Elysia()
+export const app = new Elysia()
   .use(usersRoute)
   .get("/", () => "Hello Elysia")
   .get("/users", async () => {
@@ -14,9 +14,12 @@ const app = new Elysia()
       console.error(error);
       return { error: "Database connection or query failed" };
     }
-  })
-  .listen(3000);
+  });
 
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
-);
+if (process.env.NODE_ENV !== "test") {
+  app.listen(3000);
+  console.log(
+    `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+  );
+}
+
