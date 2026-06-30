@@ -22,11 +22,27 @@ export const usersRoute = new Elysia()
       return { error: "Internal Server Error" };
     }
   }, {
+    detail: {
+      tags: ["Users"],
+      summary: "Registrasi Pengguna Baru",
+      description: "Endpoint untuk mendaftarkan pengguna baru ke dalam database."
+    },
     body: t.Object({
       name: t.String({ maxLength: 255 }),
       email: t.String({ maxLength: 255 }),
       password: t.String({ maxLength: 255 })
-    })
+    }),
+    response: {
+      200: t.Object({
+        data: t.String()
+      }),
+      400: t.Object({
+        error: t.String()
+      }),
+      500: t.Object({
+        error: t.String()
+      })
+    }
   })
   .post("/api/users/login", async ({ body, set }) => {
     try {
@@ -41,10 +57,26 @@ export const usersRoute = new Elysia()
       return { error: "Internal Server Error" };
     }
   }, {
+    detail: {
+      tags: ["Users"],
+      summary: "Login Pengguna",
+      description: "Melakukan verifikasi kredensial pengguna dan mengembalikan token session."
+    },
     body: t.Object({
       email: t.String({ maxLength: 255 }),
       password: t.String({ maxLength: 255 })
-    })
+    }),
+    response: {
+      200: t.Object({
+        data: t.String()
+      }),
+      401: t.Object({
+        error: t.String()
+      }),
+      500: t.Object({
+        error: t.String()
+      })
+    }
   })
   .get("/api/users/current", async ({ headers, set }) => {
     try {
@@ -64,6 +96,28 @@ export const usersRoute = new Elysia()
       set.status = 500;
       return { error: "Internal Server Error" };
     }
+  }, {
+    detail: {
+      tags: ["Users"],
+      summary: "Ambil Profil Pengguna Aktif",
+      description: "Mengambil informasi profil pengguna yang sedang login berdasarkan session token di header Authorization."
+    },
+    response: {
+      200: t.Object({
+        data: t.Object({
+          id: t.Number(),
+          name: t.String(),
+          email: t.String(),
+          created_at: t.Union([t.Date(), t.Null()])
+        })
+      }),
+      401: t.Object({
+        error: t.String()
+      }),
+      500: t.Object({
+        error: t.String()
+      })
+    }
   })
   .delete("/api/users/logout", async ({ headers, set }) => {
     try {
@@ -82,6 +136,23 @@ export const usersRoute = new Elysia()
       }
       set.status = 500;
       return { error: "Internal Server Error" };
+    }
+  }, {
+    detail: {
+      tags: ["Users"],
+      summary: "Logout Pengguna",
+      description: "Menghapus session token pengguna dari database untuk mengakhiri session."
+    },
+    response: {
+      200: t.Object({
+        data: t.String()
+      }),
+      401: t.Object({
+        error: t.String()
+      }),
+      500: t.Object({
+        error: t.String()
+      })
     }
   });
 

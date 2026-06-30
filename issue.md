@@ -1,73 +1,93 @@
-# Task: Implementasi API Logout User
+# Issue: Implementasi Swagger API Documentation
 
-## Deskripsi Tugas
-Tugas ini adalah untuk mengimplementasikan API endpoint yang digunakan untuk melakukan proses logout user. Proses ini dilakukan dengan cara menghapus data session (token) user yang sedang login dari database. Aplikasi ini menggunakan ElysiaJS untuk routing dan Drizzle ORM.
+## Deskripsi
+Kita perlu menambahkan antarmuka dokumentasi API interaktif menggunakan Swagger agar pengguna atau developer lain (seperti frontend developer) dapat dengan mudah melihat spesifikasi dan menguji endpoint API yang tersedia di aplikasi ini secara langsung dari browser.
+
+## Target Implementator
+Junior Programmer / AI Assistant
+
+## Teknologi yang Digunakan
+- `@elysiajs/swagger` (Plugin resmi ElysiaJS untuk integrasi Swagger/OpenAPI)
 
 ---
 
-## Spesifikasi API
+## Tahapan Implementasi (Langkah demi Langkah)
 
-- **Endpoint:** `DELETE /api/users/logout`
-- **Headers:**
-  - `Authorization: Bearer <token>` (atau `Bearer. <token>`)
-    *(Catatan: Token ini adalah token session yang akan dihapus dari tabel `sessions` di database).*
+Tolong ikuti langkah-langkah di bawah ini dengan berurutan:
 
-- **Response Body - Success (200 OK):**
-  ```json
-  {
-    "data": "OK"
-  }
+### 1. Instalasi Dependensi
+Jalankan perintah berikut di terminal (pada root direktori proyek) untuk menginstal plugin Swagger dari ekosistem Elysia:
+```bash
+bun add @elysiajs/swagger
+```
+
+### 2. Integrasi Swagger di Entry Point (`src/index.ts`)
+Buka file `src/index.ts` dan lakukan modifikasi berikut:
+- Import plugin swagger di bagian atas file:
+  ```typescript
+  import { swagger } from "@elysiajs/swagger";
   ```
-  *(Catatan: Jika sukses logout, data session dengan token tersebut harus dihapus secara permanen dari tabel `sessions`).*
-
-- **Response Body - Error (401 Unauthorized):**
-  Jika token tidak valid, tidak dikirimkan, atau tidak ditemukan di database:
-  ```json
-  {
-    "error": "Unauthorizeed"
-  }
+- Daftarkan plugin tersebut menggunakan `.use()` pada instansiasi aplikasi Elysia. 
+  **Penting:** Posisikan `.use(swagger(...))` di awal, sebelum pendaftaran route lainnya (seperti `.use(usersRoute)`), agar Swagger dapat membaca seluruh rute yang ada di bawahnya.
+  
+  Contoh implementasi:
+  ```typescript
+  export const app = new Elysia()
+    .use(swagger({
+      documentation: {
+        info: {
+          title: 'User Management API',
+          version: '1.0.0',
+          description: 'Dokumentasi API untuk Sistem Manajemen Pengguna'
+        }
+      }
+    }))
+    .use(usersRoute)
+    // ... route lainnya tetap dibiarkan ...
   ```
-  *(Penting: Samakan teks error `"Unauthorizeed"` persis dengan spesifikasi).*
 
----
+### 3. Memperkaya Dokumentasi Route (`src/routes/users-route.ts`)
+Agar tampilan di Swagger UI informatif dan rapi, kita perlu menambahkan metadata pada tiap endpoint. 
+Buka file `src/routes/users-route.ts`. Pada parameter kedua dari tiap handler rute (objek konfigurasi skema), tambahkan properti `detail`.
 
-## Struktur Folder & File
-Pastikan implementasi kode mengikuti arsitektur yang sudah ada:
-- **Routes:** `src/routes/users-route.ts`
-- **Services:** `src/services/users-service.ts`
+Berikut adalah contoh modifikasi untuk rute **Register** (`POST /api/users`):
+```typescript
+.post("/api/users", async ({ body, set }) => {
+  // ... kode implementasi tetap sama ...
+}, {
+  detail: {
+    tags: ['Users'], // Untuk mengelompokkan API di Swagger UI
+    summary: 'Registrasi Pengguna Baru',
+    description: 'Endpoint untuk mendaftarkan pengguna baru ke dalam database.'
+  },
+  body: t.Object({
+    // ... skema body tetap sama ...
+  })
+})
+```
+**Tugas Anda:** Lakukan hal yang sama (menambahkan properti `detail`) untuk rute lainnya:
+- `POST /api/users/login` (Login User)
+- `GET /api/users/current` (Get Current User)
+- `DELETE /api/users/logout` (Logout User)
 
----
+### 4. Verifikasi dan Pengujian Manual
+Setelah kode ditambahkan:
+1. Jalankan aplikasi secara lokal dengan perintah:
+   ```bash
+   bun run dev
+   ```
+2. Buka browser dan akses alamat: `http://localhost:3000/swagger`
+3. Pastikan halaman antarmuka **Swagger UI** muncul dan menampilkan daftar endpoint `Users`.
+4. Uji coba salah satu endpoint (misal: `GET /` atau register) langsung dari halaman Swagger menggunakan tombol **"Try it out"**.
 
-## Tahapan Implementasi
-
-Berikut adalah langkah-langkah detail yang harus dilakukan oleh junior programmer atau AI model:
-
-### Langkah 1: Membuat Fungsi Bisnis Logout di Service
-Buka file `src/services/users-service.ts` dan tambahkan fungsi `logoutUser`:
-1. Buat fungsi async `logoutUser(token: string)`.
-2. Lakukan pengecekan token di database: Lakukan query (select) ke tabel `sessions` untuk mencari record yang memiliki `token` yang sama.
-3. Jika record session tidak ditemukan, lemparkan error menggunakan `UnauthorizedError` (class custom yang sudah ada di service).
-4. Jika session ditemukan, jalankan perintah `delete` menggunakan Drizzle ORM pada tabel `sessions` dengan kondisi `token` sama dengan parameter yang dikirim.
-5. Fungsi ini dapat berupa void, atau cukup menunggu (`await`) proses delete selesai.
-
-### Langkah 2: Menambahkan Route Baru di Elysia
-Buka file `src/routes/users-route.ts` dan lakukan langkah berikut:
-1. Impor fungsi `logoutUser` dari `users-service.ts`.
-2. Definisikan endpoint `DELETE /api/users/logout` menggunakan method `.delete()`.
-3. Lakukan proses ekstraksi token dari header `Authorization`:
-   - Ambil header `Authorization` dari request context.
-   - Periksa apakah string dimulai dengan `"Bearer "` atau `"Bearer. "`.
-   - Jika header tidak valid atau kosong, set status response menjadi `401` dan kembalikan `{ error: "Unauthorizeed" }`.
-   - Ekstrak nilai token yang sebenarnya.
-4. Panggil fungsi `logoutUser(token)` di dalam blok `try-catch`.
-5. Jika proses berhasil, kembalikan response sukses berbentuk `{ data: "OK" }`.
-6. Tangkap (catch) error: Jika error berupa instance dari `UnauthorizedError`, kembalikan HTTP status `401` dengan pesan `{ error: "Unauthorizeed" }`.
-7. Jika ada error server lain, kembalikan HTTP status `500` dengan pesan `{ error: "Internal Server Error" }`.
-
-### Langkah 3: Pengujian (Validasi)
-1. Pastikan project ter-compile sukses tanpa ada error TypeScript.
-2. Jalankan simulasi Login (`POST /api/users/login`) untuk mendapatkan token session baru.
-3. Coba akses endpoint `GET /api/users/current` dengan token tersebut (harus sukses).
-4. Panggil endpoint `DELETE /api/users/logout` dengan token tersebut. Pastikan HTTP response adalah `200 OK` dengan body `{"data": "OK"}` dan data di tabel sessions terhapus.
-5. Panggil kembali endpoint `GET /api/users/current` dengan token yang sama. Kali ini harus gagal dengan pesan `"Unauthorizeed"` karena session sudah dihapus.
-6. Coba panggil endpoint `DELETE /api/users/logout` tanpa header authorization atau token asal, pastikan gagal dengan pesan `"Unauthorizeed"`.
+### 5. Verifikasi Unit Test & Commit
+1. Pastikan perubahan yang dilakukan tidak merusak fitur yang sudah ada dengan menjalankan unit test:
+   ```bash
+   bun test test/api.test.ts
+   ```
+2. Jika semua test *pass* (hijau), lakukan proses commit dengan pesan yang jelas. Contoh:
+   ```bash
+   git add .
+   git commit -m "feat: integrasi swagger api documentation"
+   ```
+3. Push ke branch baru (misal: `feature/swagger`) dan buat Pull Request ke branch utama.

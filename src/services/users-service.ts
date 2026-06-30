@@ -35,6 +35,15 @@ interface LoginUserPayload {
   password: string;
 }
 
+/**
+ * Mendaftarkan pengguna (user) baru ke dalam sistem.
+ * Fungsi ini melakukan validasi apakah email sudah terdaftar,
+ * melakukan enkripsi (hashing) password menggunakan bcrypt,
+ * dan menyimpan data user baru ke database.
+ * 
+ * @param payload Objek data registrasi berisi name, email, dan password.
+ * @throws {EmailAlreadyExistsError} Jika email yang didaftarkan sudah digunakan.
+ */
 export async function registerUser(payload: RegisterUserPayload) {
   // 1. Cek apakah email sudah terdaftar
   const existingUser = await db
@@ -61,6 +70,15 @@ export async function registerUser(payload: RegisterUserPayload) {
   });
 }
 
+/**
+ * Melakukan proses login pengguna.
+ * Fungsi ini mencocokkan email di database, memverifikasi hash password,
+ * lalu membuat token session baru berbentuk UUID dan menyimpannya ke database.
+ * 
+ * @param payload Objek kredensial login berisi email dan password.
+ * @returns Token session yang valid berbentuk UUID.
+ * @throws {InvalidCredentialsError} Jika email tidak ditemukan atau password salah.
+ */
 export async function loginUser(payload: LoginUserPayload): Promise<string> {
   // 1. Lakukan query ke tabel users berdasarkan email
   const existingUser = await db
@@ -102,6 +120,15 @@ interface UserResponse {
   created_at: Date | null;
 }
 
+/**
+ * Mengambil data profil dari pengguna yang sedang aktif (login).
+ * Fungsi ini mencocokkan session token di database, memverifikasi status session,
+ * lalu melakukan query profil pengguna terkait (id, name, email, created_at).
+ * 
+ * @param token Token session dari header authorization.
+ * @returns Objek data profil user yang aktif.
+ * @throws {UnauthorizedError} Jika session token tidak valid atau tidak ditemukan.
+ */
 export async function getCurrentUser(token: string): Promise<UserResponse> {
   const sessionResult = await db
     .select({
@@ -145,6 +172,13 @@ export async function getCurrentUser(token: string): Promise<UserResponse> {
   };
 }
 
+/**
+ * Melakukan logout pengguna dengan menghapus data session token yang aktif.
+ * Fungsi ini menghapus baris session dari database berdasarkan token yang dikirim.
+ * 
+ * @param token Token session yang ingin dinonaktifkan (dihapus).
+ * @throws {UnauthorizedError} Jika token tidak ditemukan di database.
+ */
 export async function logoutUser(token: string): Promise<void> {
   const [result] = await db.delete(sessions).where(eq(sessions.token, token));
 
