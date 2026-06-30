@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { db } from "./db";
 import { users } from "./db/schema";
@@ -23,6 +23,9 @@ export const app = new Elysia()
       summary: "Root Endpoint",
       description: "Endpoint sederhana untuk mengecek status kesehatan server.",
     },
+    response: {
+      200: t.String(),
+    },
   })
   .get(
     "/users",
@@ -40,6 +43,21 @@ export const app = new Elysia()
         tags: ["System"],
         summary: "Ambil Semua Pengguna",
         description: "Mengambil data seluruh pengguna langsung dari database (tujuan debugging/admin).",
+      },
+      response: {
+        200: t.Union([
+          t.Array(
+            t.Object({
+              id: t.Number(),
+              name: t.String(),
+              email: t.String(),
+              createAt: t.Union([t.Date(), t.Null()]),
+            })
+          ),
+          t.Object({
+            error: t.String(),
+          }),
+        ]),
       },
     }
   );
